@@ -1,12 +1,21 @@
+import os
 from fastapi.responses import JSONResponse
 import pytz
 from datetime import datetime
 from secrets import token_hex
 from fastapi import FastAPI, HTTPException,APIRouter
+import google.generativeai as genai
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+api_key = os.getenv("API_KEY_gm")
 
 from api.endpoints.rag import rag_using_json
 
 router=APIRouter
+genai.configure(api_key=api_key)
 sessions = {}
 
 
@@ -78,7 +87,13 @@ def send_message(user_input: str, session_id: str = None):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating prompt: {e}")
     try:
-        bot_response = f"I received your message: '{user_input}'"  
+        model = genai.GenerativeModel(
+                model_name="models/gemini-1.5-flash",
+                
+            )
+        
+        response = model.generate_content(prompt, request_options={"timeout": 600})
+        bot_response = f" '{response}'"  
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing chatbot response: {e}")
 
